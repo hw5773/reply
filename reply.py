@@ -4,6 +4,8 @@ import re
 import sys
 import pprint
 import json
+import time
+import random
 
 lst = []
 printed = False
@@ -11,8 +13,9 @@ printed = False
 url = "http://news.naver.com/main/hotissue/read.nhn?mode=LSD&mid=shm&sid1=100&oid=002&aid=0002094580&m_view=1" 
 
 def usage():
-    print ("Get the replies from news")
-    print ("python3 reply.py <output filename> <oid> <aid start> <num of news>")
+    print (">>> Get the replies from news.") 
+    print (">>> The output file will be <output directory>/<oid>_<aid start>_<num of news>.csv")
+    print ("python3 reply.py <output directory> <oid> <aid start> <num of news>")
     exit(1)
 
 def crawl(of, o, a):
@@ -27,7 +30,7 @@ def crawl(of, o, a):
     aid = "%010d" % a
 
     while True : 
-        c_url = "https://apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=news&templateId=default_society&pool=cbox5&_callback=jQuery1707138182064460843_1523512042464&lang=ko&country=&objectId=news"+oid+"%2C"+aid+"&categoryId=&pageSize=20&indexSize=10&groupId=&listType=OBJECT&pageType=more&page="+str(page)+"&refresh=false&sort=FAVORITE"  
+        c_url = "https://apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=news&templateId=default_society&pool=cbox5&_callback=jQuery1707138182064460843_1523512042464&lang=ko&country=&objectId=news"+oid+"%2C"+aid+"&categoryId=&pageSize=50&indexSize=10&groupId=&listType=OBJECT&pageType=more&page="+str(page)+"&refresh=false&sort=FAVORITE"  
         r = requests.get(c_url,headers=header) 
         cont = BeautifulSoup(r.content,"html.parser")
         total_comm = str(cont).split('comment":')[1].split(",")[0] 
@@ -52,20 +55,31 @@ def crawl(of, o, a):
         else :  
             page += 1
 
+        time.sleep(random.randint(2, 8))
+
 def main():
     if len(sys.argv) != 5:
         usage()
 
-    ofname = sys.argv[1]
-    oid = int(sys.argv[2])
-    start = int(sys.argv[3])
-    num = int(sys.argv[4])
+    ofdir = sys.argv[1]
+    try:
+        oid = int(sys.argv[2])
+        start = int(sys.argv[3])
+        num = int(sys.argv[4])
+    except:
+        print (">>> Error: <oid>, <aid start>, and <num of news> should be Integer")
+        usage()
 
-    of = open(ofname, "w")
+    ofname = "%s/%d_%d_%d.csv" % (ofdir, oid, start, num)
+
+    try:
+        of = open(ofname, "w")
+    except:
+        print (">>> Error: Directory not exist")
+        usage()
 
     for aid in range(start, start + num):
         crawl(of, oid, aid)
-
     of.close()
 
 if __name__ == "__main__":
